@@ -1,1 +1,1 @@
-# chip listo
+# chip listo para fabricación
