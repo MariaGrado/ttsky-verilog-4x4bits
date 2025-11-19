@@ -1,0 +1,41 @@
+name: CI
+
+on: [push, workflow_dispatch]
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install cocotb + extras
+        run: pip install cocotb cocotb-test pytest pytest-html
+
+      - name: Run cocotb tests
+        run: |
+          cd test
+          pytest -v --html=report.html --junitxml=results.xml
+
+      - name: Test Summary
+        uses: test-summary/action@v2.3
+        with:
+          paths: "test/results.xml"
+        if: always()
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            test/tb.fst
+            test/results.xml
+            test/report.html
+        if: always()
