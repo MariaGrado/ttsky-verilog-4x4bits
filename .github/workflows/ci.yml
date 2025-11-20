@@ -1,6 +1,11 @@
 name: CI
 
-on: [push, workflow_dispatch]
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   test:
@@ -8,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -16,13 +21,26 @@ jobs:
       - name: Install cocotb
         run: pip install cocotb cocotb-test
 
-      - name: Run cocotb tests
-        run: |
-          cd test
-          python -m cocotb_test -m test_multiplier
+      - name: Run tests
+        working-directory: test
+        run: pytest -v
 
-      - name: Test Summary
-        uses: test-summary/action@v2.3
-        with:
-          paths: "test/results.xml"
+      - name: Upload results
         if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            test/*.fst
+            test/*.xml
+            test/*.html
+
+  gds:
+    needs: test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build GDS
+        run: |
+          pip install -r requirements.txt
+          make
